@@ -1,7 +1,6 @@
 """
-Network Statistics and Analytics
-Processes scan data into meaningful metrics for the dashboard.
-Handles data aggregation, trend tracking, and summary calculations.
+Stats calculations for the dashboard. Takes scan results and produces
+metrics, distributions, and health scores.
 """
 
 import time
@@ -15,7 +14,6 @@ from src.scanner.port_scanner import PortResult
 
 @dataclass
 class ScanSummary:
-    """High-level summary of a completed scan."""
     total_hosts_scanned: int = 0
     active_hosts: int = 0
     inactive_hosts: int = 0
@@ -40,10 +38,7 @@ class ScanSummary:
 
 
 class NetworkStats:
-    """
-    Analytics engine for network scan data.
-    Computes statistics, identifies patterns, and prepares visualization data.
-    """
+    """Computes stats from scan data for the dashboard."""
 
     def __init__(self):
         self.scan_history: List[ScanSummary] = []
@@ -51,18 +46,13 @@ class NetworkStats:
         self._port_data: Dict[str, List[PortResult]] = {}
 
     def update_devices(self, devices: List[DeviceInfo]):
-        """Update the working dataset with latest scan results."""
         self._current_devices = devices
 
     def update_ports(self, ip: str, ports: List[PortResult]):
-        """Update port scan data for a specific host."""
         self._port_data[ip] = ports
 
     def get_summary(self, scan_duration: float = 0.0, total_scanned: int = 0) -> ScanSummary:
-        """
-        Calculate a summary from the current device list.
-        Call this after a scan completes.
-        """
+        """Build summary after a scan finishes."""
         devices = self._current_devices
         summary = ScanSummary()
 
@@ -78,12 +68,8 @@ class NetworkStats:
                 summary.min_response_time = min(response_times)
                 summary.max_response_time = max(response_times)
 
-        # Count total open ports across all scanned hosts
-        summary.total_open_ports = sum(
-            len(ports) for ports in self._port_data.values()
-        )
+        summary.total_open_ports = sum(len(ports) for ports in self._port_data.values())
 
-        # Keep history (last 20 scans)
         self.scan_history.append(summary)
         if len(self.scan_history) > 20:
             self.scan_history = self.scan_history[-20:]
@@ -91,18 +77,9 @@ class NetworkStats:
         return summary
 
     def get_latency_distribution(self) -> Dict[str, int]:
-        """
-        Categorize devices by response time ranges.
-        Useful for latency histogram visualization.
-        """
-        buckets = {
-            "< 1ms": 0,
-            "1-5ms": 0,
-            "5-20ms": 0,
-            "20-100ms": 0,
-            "100-500ms": 0,
-            "> 500ms": 0,
-        }
+        """Bucket devices by response time for histogram."""
+        buckets = {"< 1ms": 0, "1-5ms": 0, "5-20ms": 0,
+                   "20-100ms": 0, "100-500ms": 0, "> 500ms": 0}
 
         for device in self._current_devices:
             rt = device.response_time
@@ -118,28 +95,19 @@ class NetworkStats:
                 buckets["100-500ms"] += 1
             else:
                 buckets["> 500ms"] += 1
-
         return buckets
 
     def get_port_service_breakdown(self) -> Dict[str, int]:
-        """
-        Count occurrences of each service type across all scanned hosts.
-        Returns sorted dict of service_name: count.
-        """
+        """Count service types found across all hosts."""
         service_counter = Counter()
-
         for ip, ports in self._port_data.items():
             for port_result in ports:
                 if port_result.state == "open":
                     service_counter[port_result.service] += 1
-
-        # Return top 15 services
         return dict(service_counter.most_common(15))
 
     def get_device_response_data(self) -> List[Dict]:
-        """
-        Get response time data for each device (chart-ready format).
-        """
+        """Response time per device, sorted."""
         data = []
         for device in sorted(self._current_devices, key=lambda d: d.response_time):
             data.append({
@@ -151,31 +119,22 @@ class NetworkStats:
         return data
 
     def get_network_health_score(self) -> float:
-        """
-        Calculate a simple network health score (0-100).
-        Based on response rates and latency distribution.
-        """
+        """Simple 0-100 health score based on latency + responsiveness."""
         if not self._current_devices:
             return 0.0
 
-        # Factors: response rate, low latency percentage, no timeouts
         total = len(self._current_devices)
         low_latency = sum(1 for d in self._current_devices if d.response_time < 50)
         responsive = sum(1 for d in self._current_devices if d.response_time > 0)
 
         latency_score = (low_latency / total) * 40 if total > 0 else 0
         response_score = (responsive / total) * 40 if total > 0 else 0
-
-        # Bonus for having devices at all
         discovery_score = min(total / 10, 1.0) * 20
 
         return min(latency_score + response_score + discovery_score, 100.0)
 
     def get_scan_trend(self) -> List[Dict]:
-        """
-        Return historical scan data for trend visualization.
-        Shows how active host count has changed over time.
-        """
+        """Historical data for trend chart."""
         return [
             {
                 "timestamp": s.timestamp,
@@ -187,10 +146,7 @@ class NetworkStats:
         ]
 
     def get_dashboard_stats(self) -> Dict:
-        """
-        Get all stats needed for the main dashboard cards.
-        Returns a flat dict ready for UI consumption.
-        """
+        """All the numbers the dashboard cards need."""
         devices = self._current_devices
         total_ports = sum(len(p) for p in self._port_data.values())
 

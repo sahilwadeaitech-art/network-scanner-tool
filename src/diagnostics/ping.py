@@ -1,7 +1,5 @@
 """
-Ping Diagnostic Tool
-Performs ICMP echo requests with detailed statistics reporting.
-Supports continuous ping and single-shot modes.
+Ping wrapper - runs system ping and parses the output into structured data.
 """
 
 import subprocess
@@ -14,9 +12,9 @@ from typing import List, Optional, Callable
 
 @dataclass
 class PingResult:
-    """Single ping response data."""
+    """One ping reply."""
     sequence: int
-    response_time: float  # milliseconds
+    response_time: float
     ttl: int = 0
     success: bool = True
     error: Optional[str] = None
@@ -24,7 +22,7 @@ class PingResult:
 
 @dataclass
 class PingStats:
-    """Aggregate statistics for a ping session."""
+    """Aggregate ping stats."""
     target: str
     resolved_ip: Optional[str] = None
     packets_sent: int = 0
@@ -59,10 +57,7 @@ class PingStats:
 
 
 class PingTool:
-    """
-    Wrapper around system ping with parsed results.
-    Provides structured output for the UI.
-    """
+    """Runs system ping and parses output line by line."""
 
     def __init__(self):
         self.is_running = False
@@ -70,25 +65,14 @@ class PingTool:
 
     def ping(self, target: str, count: int = 4, timeout: float = 2.0,
              callback: Optional[Callable] = None) -> PingStats:
-        """
-        Ping a target host with the specified number of attempts.
-        
-        Args:
-            target: Hostname or IP to ping
-            count: Number of pings to send
-            timeout: Timeout per request in seconds
-            callback: Called with each PingResult as it comes in
-        """
+        """Ping target, call callback for each reply as it arrives."""
         self.is_running = True
         stats = PingStats(target=target)
 
         try:
             cmd = self._build_command(target, count, timeout)
             process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
 
             sequence = 0
@@ -101,7 +85,6 @@ class PingTool:
                 if not line:
                     continue
 
-                # Try to extract response time from the line
                 result = self._parse_ping_line(line, sequence)
                 if result:
                     sequence += 1
@@ -112,7 +95,7 @@ class PingTool:
                     if callback:
                         callback(result)
 
-                # Check if we can extract the resolved IP
+                # try to grab resolved IP from output
                 if stats.resolved_ip is None:
                     ip_match = re.search(r'\(?([\d.]+)\)?', line)
                     if ip_match and target != ip_match.group(1):
@@ -120,7 +103,6 @@ class PingTool:
 
             process.wait(timeout=5)
 
-            # If we didn't capture individual results, parse the full output
             if not stats.results:
                 stderr_output = process.stderr.read()
                 if "could not find host" in stderr_output.lower() or \
@@ -135,23 +117,18 @@ class PingTool:
         except Exception as e:
             stats.results.append(PingResult(0, 0, success=False, error=str(e)))
 
-        # Calculate statistics
         self._calculate_stats(stats)
         self.is_running = False
         return stats
 
     def _build_command(self, target: str, count: int, timeout: float) -> list:
-        """Build the platform-appropriate ping command."""
         if self._system == "windows":
             return ["ping", "-n", str(count), "-w", str(int(timeout * 1000)), target]
         else:
             return ["ping", "-c", str(count), "-W", str(int(timeout)), target]
 
     def _parse_ping_line(self, line: str, sequence: int) -> Optional[PingResult]:
-        """Parse a single line of ping output for timing data."""
-        # Match typical ping response patterns
-        # Linux: 64 bytes from 192.168.1.1: icmp_seq=1 ttl=64 time=2.34 ms
-        # Windows: Reply from 192.168.1.1: bytes=32 time=2ms TTL=64
+        """Extract time and TTL from a ping output line."""
         time_match = re.search(r'time[=<](\d+\.?\d*)\s*ms', line, re.I)
         ttl_match = re.search(r'ttl[=](\d+)', line, re.I)
 
@@ -160,7 +137,6 @@ class PingTool:
             ttl = int(ttl_match.group(1)) if ttl_match else 0
             return PingResult(sequence=sequence, response_time=response_time, ttl=ttl)
 
-        # Check for timeout or unreachable
         if "timed out" in line.lower() or "unreachable" in line.lower():
             return PingResult(sequence=sequence, response_time=0, success=False,
                            error="Request timed out")
@@ -168,7 +144,6 @@ class PingTool:
         return None
 
     def _calculate_stats(self, stats: PingStats):
-        """Calculate min/avg/max from individual results."""
         successful = [r for r in stats.results if r.success]
         if successful:
             times = [r.response_time for r in successful]
@@ -176,11 +151,9 @@ class PingTool:
             stats.max_time = max(times)
             stats.avg_time = sum(times) / len(times)
 
-        # Ensure packet counts are correct
         if stats.packets_sent == 0:
             stats.packets_sent = len(stats.results)
             stats.packets_received = len(successful)
 
     def stop(self):
-        """Stop an ongoing ping operation."""
         self.is_running = False

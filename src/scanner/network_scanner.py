@@ -1,9 +1,5 @@
 """
-Network Discovery Scanner
-Handles host detection across the local subnet using multiple methods:
-- ICMP ping sweep
-- TCP SYN probes
-- ARP requests (when running with privileges)
+Network discovery - finds active hosts on a subnet via ping + TCP fallback.
 """
 
 import socket
@@ -24,7 +20,7 @@ from src.utils.constants import SCAN_TIMEOUT, MAX_THREADS, STATUS_ONLINE, STATUS
 
 @dataclass
 class DeviceInfo:
-    """Represents a discovered network device."""
+    """Single discovered device on the network."""
     ip_address: str
     hostname: Optional[str] = None
     mac_address: Optional[str] = None
@@ -47,10 +43,7 @@ class DeviceInfo:
 
 
 class NetworkScanner:
-    """
-    Scans the local network to discover active hosts.
-    Uses a combination of ping and TCP probes for reliability.
-    """
+    """Scans a subnet for live hosts using ping + TCP connect fallback."""
 
     def __init__(self):
         self.devices: List[DeviceInfo] = []
@@ -64,12 +57,8 @@ class NetworkScanner:
     def scan_network(self, target_subnet=None, callback: Optional[Callable] = None,
                      progress_callback: Optional[Callable] = None):
         """
-        Perform a full network discovery scan.
-        
-        Args:
-            target_subnet: CIDR notation subnet (e.g., '192.168.1.0/24')
-            callback: Called with DeviceInfo when a host is found
-            progress_callback: Called with (scanned, total) for progress updates
+        Scan the given subnet (or auto-detect local one).
+        callback gets called with each DeviceInfo as it's found.
         """
         self.is_scanning = True
         self.devices = []
@@ -87,7 +76,6 @@ class NetworkScanner:
             self.is_scanning = False
             return []
 
-        # Use thread pool for concurrent scanning
         with ThreadPoolExecutor(max_workers=min(MAX_THREADS, self.total_hosts)) as executor:
             futures = {}
             for ip in ip_list:
@@ -118,19 +106,16 @@ class NetworkScanner:
         return self.devices
 
     def _probe_host(self, ip_address):
-        """
-        Check if a host is alive using ping.
-        Returns DeviceInfo if host responds, None otherwise.
-        """
+        """Check if host is up. Try ping first, fall back to TCP."""
         if self._stop_event.is_set():
             return None
 
         start_time = time.time()
         is_alive = self._ping_host(ip_address)
-        response_time = (time.time() - start_time) * 1000  # Convert to ms
+        response_time = (time.time() - start_time) * 1000
 
         if not is_alive:
-            # Fallback: try a quick TCP connect on common ports
+            # some hosts block ICMP, try common TCP ports
             is_alive = self._tcp_probe(ip_address, [80, 443, 22, 445])
             if is_alive:
                 response_time = (time.time() - start_time) * 1000
@@ -142,19 +127,14 @@ class NetworkScanner:
                 response_time=response_time,
                 last_seen=time.time()
             )
-
-            # Resolve hostname (non-blocking, with timeout)
             device.hostname = resolve_hostname(ip_address)
-
-            # Get MAC address if possible
             device.mac_address = get_mac_address(ip_address)
-
             return device
 
         return None
 
     def _ping_host(self, ip_address):
-        """Send ICMP ping to check if host is alive."""
+        """Send a single ICMP ping."""
         try:
             system = platform.system().lower()
             if system == "windows":
@@ -173,10 +153,7 @@ class NetworkScanner:
             return False
 
     def _tcp_probe(self, ip_address, ports):
-        """
-        Try connecting to common TCP ports as a fallback detection method.
-        Some hosts block ICMP but have TCP services running.
-        """
+        """Try TCP connect on a few common ports as ICMP fallback."""
         for port in ports:
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -190,15 +167,12 @@ class NetworkScanner:
         return False
 
     def stop_scan(self):
-        """Signal the scanner to stop gracefully."""
         self._stop_event.set()
         self.is_scanning = False
 
     def get_scan_results(self):
-        """Return current scan results."""
         with self._lock:
             return list(self.devices)
 
     def get_progress(self):
-        """Return scan progress as a float between 0.0 and 1.0."""
         return self.scan_progress
