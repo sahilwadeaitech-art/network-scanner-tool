@@ -1,7 +1,5 @@
 """
-Network Scanner Panel
-Handles the network discovery scan interface.
-Shows discovered devices, scan progress, and results.
+Network scan panel - device discovery UI.
 """
 
 import customtkinter as ctk
@@ -11,10 +9,7 @@ from src.ui.components import ScanProgressBar, DeviceListItem
 
 
 class ScannerPanel(ctk.CTkFrame):
-    """
-    Network discovery panel with scan controls and device list.
-    Provides real-time feedback during scanning operations.
-    """
+    """Network discovery panel - scan subnet, show found devices."""
 
     def __init__(self, parent, scan_service=None, **kwargs):
         super().__init__(parent, fg_color="transparent", **kwargs)
@@ -30,7 +25,6 @@ class ScannerPanel(ctk.CTkFrame):
         self._build_results_area()
 
     def _build_header(self):
-        """Build the panel header with title and scan info."""
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.grid(row=0, column=0, sticky="ew", padx=16, pady=(16, 8))
         header.grid_columnconfigure(0, weight=1)
@@ -44,7 +38,6 @@ class ScannerPanel(ctk.CTkFrame):
         desc.grid(row=1, column=0, sticky="w", pady=(2, 0))
 
     def _build_controls(self):
-        """Build scan controls - target input, scan button, progress."""
         controls = create_card(self)
         controls.grid(row=1, column=0, sticky="ew", padx=16, pady=8)
         controls.grid_columnconfigure(1, weight=1)
@@ -86,7 +79,6 @@ class ScannerPanel(ctk.CTkFrame):
                           padx=16, pady=(0, 12))
 
     def _build_results_area(self):
-        """Build the scrollable device results list."""
         results_frame = ctk.CTkFrame(self, fg_color="transparent")
         results_frame.grid(row=2, column=0, sticky="nsew", padx=16, pady=(4, 16))
         results_frame.grid_columnconfigure(0, weight=1)
@@ -122,7 +114,6 @@ class ScannerPanel(ctk.CTkFrame):
         self.empty_label.grid(row=0, column=0, pady=40)
 
     def _start_scan(self):
-        """Initiate a network discovery scan."""
         if not self.scan_service:
             return
 
@@ -149,7 +140,6 @@ class ScannerPanel(ctk.CTkFrame):
         )
 
     def _stop_scan(self):
-        """Stop the current scan."""
         if self.scan_service:
             self.scan_service.stop_all()
         self.progress.set_scanning(False)
@@ -157,17 +147,14 @@ class ScannerPanel(ctk.CTkFrame):
         self.stop_btn.configure(state="disabled")
 
     def _on_device_found(self, device):
-        """Handle a newly discovered device (called from scan thread)."""
         self.after(0, lambda: self._add_device_to_list(device))
 
     def _on_progress(self, scanned, total):
-        """Update progress bar (called from scan thread)."""
         progress = scanned / total if total > 0 else 0
         self.after(0, lambda: self.progress.set_progress(
             progress, f"Scanning... {scanned}/{total} hosts"))
 
     def _on_scan_complete(self, results):
-        """Handle scan completion (called from scan thread)."""
         def _update():
             self.progress.set_scanning(False)
             self.progress.set_progress(1.0, f"Complete - {len(results)} devices found")
@@ -177,7 +164,6 @@ class ScannerPanel(ctk.CTkFrame):
         self.after(0, _update)
 
     def _add_device_to_list(self, device):
-        """Add a device widget to the results list."""
         # Hide empty state
         if self.empty_label.winfo_exists():
             self.empty_label.grid_forget()
@@ -193,12 +179,9 @@ class ScannerPanel(ctk.CTkFrame):
         self.count_label.configure(text=f"{count} devices")
 
     def _on_device_select(self, device_data):
-        """Handle device selection - could open port scan for that device."""
-        # Parent window can connect to this for navigation
         pass
 
     def _clear_devices(self):
-        """Remove all device widgets from the list."""
         for widget in self._device_widgets:
             widget.destroy()
         self._device_widgets = []

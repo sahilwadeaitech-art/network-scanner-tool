@@ -1,7 +1,5 @@
 """
-Diagnostics Panel
-Quick network diagnostic tools - Ping, DNS Lookup, and Traceroute.
-Provides tabbed interface for each tool with real-time output.
+Diagnostics panel - ping, DNS, traceroute tabs.
 """
 
 import customtkinter as ctk
@@ -10,10 +8,7 @@ from src.ui.components import LogConsole
 
 
 class DiagnosticsPanel(ctk.CTkFrame):
-    """
-    Network diagnostic tools panel.
-    Offers Ping, DNS Lookup, and Traceroute with structured output.
-    """
+    """Tabbed diagnostics: ping, DNS, traceroute."""
 
     def __init__(self, parent, scan_service=None, **kwargs):
         super().__init__(parent, fg_color="transparent", **kwargs)
@@ -26,7 +21,6 @@ class DiagnosticsPanel(ctk.CTkFrame):
         self._build_tools()
 
     def _build_header(self):
-        """Build panel header."""
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.grid(row=0, column=0, sticky="ew", padx=16, pady=(16, 8))
 
@@ -40,7 +34,6 @@ class DiagnosticsPanel(ctk.CTkFrame):
         desc.pack(anchor="w", pady=(2, 0))
 
     def _build_tools(self):
-        """Build the diagnostic tools with tabbed interface."""
         # Tab container
         self.tabview = ctk.CTkTabview(self, fg_color=COLORS["bg_surface"],
                                       segmented_button_fg_color=COLORS["card"],
@@ -59,7 +52,6 @@ class DiagnosticsPanel(ctk.CTkFrame):
         self._build_trace_tab()
 
     def _build_ping_tab(self):
-        """Build the ping diagnostic interface."""
         tab = self.tab_ping
         tab.grid_columnconfigure(0, weight=1)
         tab.grid_rowconfigure(1, weight=1)
@@ -98,7 +90,6 @@ class DiagnosticsPanel(ctk.CTkFrame):
         self.ping_output.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
 
     def _build_dns_tab(self):
-        """Build the DNS lookup interface."""
         tab = self.tab_dns
         tab.grid_columnconfigure(0, weight=1)
         tab.grid_rowconfigure(1, weight=1)
@@ -128,7 +119,6 @@ class DiagnosticsPanel(ctk.CTkFrame):
         self.dns_output.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
 
     def _build_trace_tab(self):
-        """Build the traceroute interface."""
         tab = self.tab_trace
         tab.grid_columnconfigure(0, weight=1)
         tab.grid_rowconfigure(1, weight=1)
@@ -158,7 +148,6 @@ class DiagnosticsPanel(ctk.CTkFrame):
         self.trace_output.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
 
     def _run_ping(self):
-        """Execute ping diagnostic."""
         if not self.scan_service:
             return
 
@@ -204,7 +193,6 @@ class DiagnosticsPanel(ctk.CTkFrame):
                                    on_complete=on_complete)
 
     def _run_dns(self):
-        """Execute DNS lookup."""
         if not self.scan_service:
             return
 
@@ -247,7 +235,6 @@ class DiagnosticsPanel(ctk.CTkFrame):
         self.scan_service.run_dns_lookup(query, on_complete=on_complete)
 
     def _run_traceroute(self):
-        """Execute traceroute diagnostic."""
         if not self.scan_service:
             return
 

@@ -1,1 +1,1 @@
-# Animation utilities for the UI
+# TODO: animation helpers for scan visualizations

@@ -1,7 +1,5 @@
 """
-Dashboard Panel
-Main overview panel showing network status, scan summary,
-analytics cards, and quick actions.
+Dashboard - overview stats, activity log, quick action buttons.
 """
 
 import customtkinter as ctk
@@ -10,10 +8,7 @@ from src.ui.components import StatCard, LogConsole
 
 
 class DashboardPanel(ctk.CTkFrame):
-    """
-    Primary dashboard view with network overview and quick stats.
-    Shows scan summaries, health indicators, and recent activity.
-    """
+    """Main dashboard with stat cards, log, and quick actions."""
 
     def __init__(self, parent, scan_service=None, **kwargs):
         super().__init__(parent, fg_color="transparent", **kwargs)
@@ -27,7 +22,6 @@ class DashboardPanel(ctk.CTkFrame):
         self._build_content_area()
 
     def _build_header(self):
-        """Build the welcome header section."""
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.grid(row=0, column=0, sticky="ew", padx=16, pady=(16, 8))
 
@@ -47,7 +41,6 @@ class DashboardPanel(ctk.CTkFrame):
         sub.pack(anchor="w", pady=(2, 0))
 
     def _build_stats_row(self):
-        """Build the analytics stat cards row."""
         stats_frame = ctk.CTkFrame(self, fg_color="transparent")
         stats_frame.grid(row=1, column=0, sticky="ew", padx=16, pady=8)
         stats_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
@@ -73,7 +66,6 @@ class DashboardPanel(ctk.CTkFrame):
         self.card_health.grid(row=0, column=3, sticky="ew", padx=(6, 0), pady=4)
 
     def _build_content_area(self):
-        """Build the main content area with log and quick actions."""
         content = ctk.CTkFrame(self, fg_color="transparent")
         content.grid(row=2, column=0, sticky="nsew", padx=16, pady=(8, 16))
         content.grid_columnconfigure(0, weight=2)
@@ -142,7 +134,6 @@ class DashboardPanel(ctk.CTkFrame):
         self.status_indicator.pack(anchor="w", padx=12, pady=(0, 8))
 
     def update_stats(self, stats: dict):
-        """Refresh the dashboard stat cards with new data."""
         self.card_devices.update_value(str(stats.get("active_devices", 0)))
         self.card_ports.update_value(str(stats.get("total_open_ports", 0)))
 
@@ -153,13 +144,11 @@ class DashboardPanel(ctk.CTkFrame):
         self.card_health.update_value(f"{health:.0f}" if health > 0 else "—")
 
     def set_scanning_state(self, is_scanning: bool):
-        """Update the dashboard to reflect scanning state."""
         if is_scanning:
             self.status_indicator.configure(text="● Scanning", text_color=COLORS["secondary"])
         else:
             self.status_indicator.configure(text="● Idle", text_color=COLORS["success"])
 
     def _handle_action(self, action_id: str):
-        """Handle quick action button clicks - delegates to parent."""
-        # These get overridden by the main app window
+        # overridden by the main app window
         pass

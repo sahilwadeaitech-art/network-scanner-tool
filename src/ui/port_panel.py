@@ -1,7 +1,5 @@
 """
-Port Scanner Panel
-Interface for scanning ports on specific target hosts.
-Shows scan controls, progress, and open port results.
+Port scanner panel UI.
 """
 
 import customtkinter as ctk
@@ -10,10 +8,7 @@ from src.ui.components import ScanProgressBar, ScanResultTable
 
 
 class PortPanel(ctk.CTkFrame):
-    """
-    Port scanning interface with target selection and result display.
-    Supports quick scan (common ports) and full range scan modes.
-    """
+    """Port scan interface - pick target, mode, see results."""
 
     def __init__(self, parent, scan_service=None, **kwargs):
         super().__init__(parent, fg_color="transparent", **kwargs)
@@ -27,7 +22,6 @@ class PortPanel(ctk.CTkFrame):
         self._build_results()
 
     def _build_header(self):
-        """Build panel header."""
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.grid(row=0, column=0, sticky="ew", padx=16, pady=(16, 8))
 
@@ -40,7 +34,6 @@ class PortPanel(ctk.CTkFrame):
         desc.pack(anchor="w", pady=(2, 0))
 
     def _build_controls(self):
-        """Build scan controls with target input and scan mode selection."""
         controls = create_card(self)
         controls.grid(row=1, column=0, sticky="ew", padx=16, pady=8)
         controls.grid_columnconfigure(1, weight=1)
@@ -115,7 +108,6 @@ class PortPanel(ctk.CTkFrame):
                           padx=16, pady=(4, 12))
 
     def _build_results(self):
-        """Build the port results table."""
         results_frame = ctk.CTkFrame(self, fg_color="transparent")
         results_frame.grid(row=2, column=0, sticky="nsew", padx=16, pady=(4, 16))
         results_frame.grid_columnconfigure(0, weight=1)
@@ -140,7 +132,6 @@ class PortPanel(ctk.CTkFrame):
         self.result_table.grid(row=1, column=0, sticky="nsew")
 
     def _start_scan(self):
-        """Begin port scanning the target."""
         if not self.scan_service:
             return
 
@@ -180,7 +171,6 @@ class PortPanel(ctk.CTkFrame):
         )
 
     def _stop_scan(self):
-        """Stop the current port scan."""
         if self.scan_service:
             self.scan_service.port_scanner.stop_scan()
         self.progress.set_scanning(False)
@@ -188,23 +178,19 @@ class PortPanel(ctk.CTkFrame):
         self.stop_btn.configure(state="disabled")
 
     def _on_port_found(self, port_result):
-        """Handle discovered open port."""
         self.after(0, lambda: self._add_port_result(port_result))
 
     def _add_port_result(self, port_result):
-        """Add port to results table (main thread)."""
         self.result_table.add_port_result(port_result)
         self._open_count += 1
         self.port_count_label.configure(text=f"{self._open_count} open ports")
 
     def _on_progress(self, scanned, total):
-        """Update scan progress."""
         progress = scanned / total if total > 0 else 0
         self.after(0, lambda: self.progress.set_progress(
             progress, f"Scanning... {scanned}/{total} ports"))
 
     def _on_scan_complete(self, results, duration):
-        """Handle scan completion."""
         def _update():
             self.progress.set_scanning(False)
             self.progress.set_progress(1.0,
@@ -214,6 +200,5 @@ class PortPanel(ctk.CTkFrame):
         self.after(0, _update)
 
     def set_target(self, ip_address: str):
-        """Pre-fill the target IP (e.g., from device selection in scanner panel)."""
         self.target_entry.delete(0, "end")
         self.target_entry.insert(0, ip_address)

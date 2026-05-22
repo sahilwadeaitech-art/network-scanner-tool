@@ -1,1 +1,1 @@
-# Topology visualization module
+# placeholder - topology viz coming later
