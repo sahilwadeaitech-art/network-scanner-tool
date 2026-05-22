@@ -1,204 +1,85 @@
 # Network Scanner Tool
 
-A modern network diagnostics and scanning utility built with Python. Provides host discovery, port scanning, and quick diagnostic tools through a clean desktop interface.
+A desktop network scanner and diagnostics tool. Scans local networks for active devices, checks open ports, and runs basic diagnostics (ping, DNS, traceroute) — all from one interface.
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
-![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
+Built with Python and CustomTkinter. Dark theme UI.
 
----
+## What it does
 
-## Overview
-
-Network Scanner Tool is a lightweight desktop application for network reconnaissance and diagnostics. It combines host discovery, TCP port scanning, and common network diagnostic utilities (ping, DNS lookup, traceroute) into a single unified interface.
-
-Built for network administrators, security enthusiasts, and developers who need quick visibility into their local network without spinning up heavy enterprise tools.
-
----
-
-## Features
-
-- **Network Discovery** — Scan your local subnet to find active devices with hostname resolution and MAC address detection
-- **Port Scanner** — TCP port scanning with service identification and banner grabbing (quick scan, full range, or custom)
-- **Ping Tool** — ICMP ping with packet loss statistics and round-trip time analysis
-- **DNS Lookup** — Forward and reverse DNS resolution with record details
-- **Traceroute** — Hop-by-hop network path mapping with latency per hop
-- **Live Dashboard** — Real-time scan progress, device count, and activity logging
-- **Export Reports** — Generate structured TXT reports of scan results
-- **Analytics** — Network health scoring, latency distribution, and scan history
-
----
+- **Network discovery** — finds active devices on your subnet (IP, hostname, MAC, response time)
+- **Port scanning** — TCP connect scan with service detection and banner grabbing
+- **Ping** — parsed ping output with min/avg/max stats
+- **DNS lookup** — forward and reverse resolution
+- **Traceroute** — hop-by-hop path with latency
+- **Report export** — saves scan results to structured .txt files
 
 ## Screenshots
 
-> Screenshots will be added after initial release.
+*Coming soon — need to take some clean ones on Windows*
 
-| Dashboard | Network Scan | Port Scanner | Diagnostics |
-|-----------|-------------|--------------|-------------|
-| *coming soon* | *coming soon* | *coming soon* | *coming soon* |
-
----
-
-## Technologies Used
-
-| Component | Technology |
-|-----------|-----------|
-| Language | Python 3.9+ |
-| UI Framework | CustomTkinter |
-| Network Scanning | socket, subprocess |
-| Packet Crafting | scapy |
-| System Info | psutil |
-| Concurrency | threading, concurrent.futures |
-| Visualization | matplotlib (optional) |
-
----
-
-## Installation
-
-### Prerequisites
-
-- Python 3.9 or higher
-- pip package manager
-
-### Setup
+## Setup
 
 ```bash
-# Clone the repository
 git clone https://github.com/sahilwadeaitech-art/network-scanner-tool.git
 cd network-scanner-tool
 
-# Create virtual environment (recommended)
 python -m venv venv
-source venv/bin/activate  # Linux/macOS
-# or
-venv\Scripts\activate     # Windows
+source venv/bin/activate   # or venv\Scripts\activate on Windows
 
-# Install dependencies
 pip install -r requirements.txt
-```
-
-### Run
-
-```bash
 python main.py
 ```
 
-> **Note:** Some features (ARP-based MAC detection, ICMP scanning) may require elevated privileges. Run with `sudo` on Linux or as Administrator on Windows for full functionality.
+Needs Python 3.9+. Some features (like ARP MAC detection) need admin/root.
 
----
+## How to use
 
-## Usage
+The sidebar has four panels:
 
-### Network Discovery
+1. **Dashboard** — overview with quick actions and activity log
+2. **Network Scan** — auto-detects your subnet, scans for hosts
+3. **Port Scanner** — enter an IP, pick quick/full/custom range
+4. **Diagnostics** — ping, nslookup, traceroute in tabs
 
-1. Open the **Network Scan** panel from the sidebar
-2. The target subnet is auto-detected from your active interface
-3. Click **Scan Network** to begin host discovery
-4. Discovered devices appear in real-time with IP, hostname, and latency
+Scan results show up in real-time. You can export reports from the sidebar.
 
-### Port Scanning
+## Stack
 
-1. Navigate to the **Port Scanner** panel
-2. Enter a target IP address
-3. Select scan mode:
-   - **Quick** — Common ports only (fast)
-   - **Full** — Ports 1-1024
-   - **Custom** — Specify your own range
-4. Open ports are listed with service names and response times
+- Python 3.9+
+- CustomTkinter (UI)
+- socket / subprocess (scanning)
+- psutil (network interface detection)
+- threading + concurrent.futures (parallel scans)
+- scapy (optional, for advanced packet stuff later)
 
-### Diagnostics
-
-1. Open the **Diagnostics** panel
-2. Choose a tool tab (Ping, DNS Lookup, or Traceroute)
-3. Enter the target and run the diagnostic
-4. Results are displayed in a structured log format
-
----
-
-## Project Structure
+## Project layout
 
 ```
-network-scanner-tool/
-├── main.py                  # Application entry point
-├── requirements.txt         # Python dependencies
-├── LICENSE
-│
-├── src/
-│   ├── ui/                  # UI panels and components
-│   │   ├── app.py           # Main application window
-│   │   ├── theme.py         # Cyber Grid theme system
-│   │   ├── components.py    # Reusable UI widgets
-│   │   ├── dashboard_panel.py
-│   │   ├── scanner_panel.py
-│   │   ├── port_panel.py
-│   │   └── diagnostics_panel.py
-│   │
-│   ├── scanner/             # Core scanning logic
-│   │   ├── network_scanner.py   # Host discovery (ping + TCP probe)
-│   │   └── port_scanner.py      # TCP port scanning
-│   │
-│   ├── diagnostics/         # Diagnostic tools
-│   │   ├── ping.py
-│   │   ├── dns_lookup.py
-│   │   └── traceroute.py
-│   │
-│   ├── analytics/           # Data processing and stats
-│   │   └── network_stats.py
-│   │
-│   ├── services/            # Orchestration layer
-│   │   ├── scan_service.py
-│   │   └── report_generator.py
-│   │
-│   └── utils/               # Shared utilities
-│       ├── constants.py
-│       └── network_utils.py
-│
-├── reports/                 # Generated scan reports
-├── assets/                  # Icons, themes, screenshots
-└── docs/                    # Documentation
+src/
+├── ui/            # all the panels and widgets
+├── scanner/       # network discovery + port scanner
+├── diagnostics/   # ping, dns, traceroute wrappers
+├── analytics/     # stats calculations for dashboard
+├── services/      # scan orchestration, report generation
+└── utils/         # constants, network helpers
 ```
 
----
-
-## Building Executable
-
-To create a standalone executable using PyInstaller:
+## Building an exe
 
 ```bash
 pip install pyinstaller
-
-# Build single-file executable
 pyinstaller --onefile --windowed --name "NetworkScanner" main.py
-
-# Output will be in dist/NetworkScanner.exe (Windows)
 ```
 
----
+## TODO / roadmap
 
-## Future Improvements
-
-- [ ] Advanced network topology visualization
-- [ ] Vulnerability scanning (CVE lookup for detected services)
-- [ ] Live packet analytics and traffic monitoring
-- [ ] AI-based anomaly detection for unusual network activity
-- [ ] Remote monitoring with web dashboard
-- [ ] Network heatmap visualization
-- [ ] SNMP device querying
-- [ ] Scheduled automated scans
-- [ ] PDF report generation with charts
-
----
-
-## Contributing
-
-Contributions are welcome. Please open an issue first to discuss proposed changes.
-
----
+- [ ] topology visualization (networkx graph)
+- [ ] better service fingerprinting
+- [ ] scheduled/repeated scans
+- [ ] PDF reports
+- [ ] save scan history between sessions
+- [ ] SNMP queries for managed switches
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-
-Built by **Sahil Wade**
+MIT
